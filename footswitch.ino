@@ -13,10 +13,9 @@ bool currentPotentiometerValue; // could be local, but why not?
 bool lastPotentiometerValue = 0; // stored pot state
 
 // button states
-uint8_t buttonOnCount = 0; // how many loops the button has been depressed for (for debouncing)
 uint8_t selectedKey = KEY_1;
-bool buttonState; // could be local, but why not?
-bool lastButtonState = false;
+bool switchState; // could be local, but why not?
+bool lastSwitchState = false;
 
 void setup() {
   // put your setup code here, to run once:
@@ -26,20 +25,14 @@ void setup() {
 }
 
 void loop() {
-  buttonState = digitalRead(buttonPin) == LOW;
-  Serial.println(buttonState);
+  switchState = digitalRead(buttonPin) == LOW;
+  Serial.println(switchState);
 
-  if (buttonState) {
-    if (buttonOnCount < BUTTON_THRESHOLD) {
-      buttonOnCount += 1;
-    } else {
-      toggleKey();
-    }
-  } else {
-    buttonOnCount = 0;
+  if (switchState != lastSwitchState) {
+    toggleKey();
   }
 
-  lastButtonState = buttonState;
+  lastSwitchState = switchState;
   
   // put your main code here, to run repeatedly:
   currentPotentiometerValue = readPot();
