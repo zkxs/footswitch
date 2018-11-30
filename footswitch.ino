@@ -2,8 +2,7 @@
 
 #define KEY_1 KEY_F14
 #define KEY_2 0x5C // backslash
-#define POT_THRESHHOLD 10
-#define BUTTON_THRESHOLD 20
+#define POT_THRESHHOLD 512
 
 const int potentiometerPin = 0;
 const int buttonPin = 9;
@@ -21,12 +20,11 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(buttonPin, INPUT_PULLUP);
   Keyboard.begin();
-  Serial.begin(9600);
+//  Serial.begin(9600);
 }
 
 void loop() {
   switchState = digitalRead(buttonPin) == LOW;
-  Serial.println(switchState);
 
   if (switchState != lastSwitchState) {
     toggleKey();
@@ -87,6 +85,5 @@ void writeLed(bool on) {
 //bool debugReadPot(){
 //  tmp = analogRead(potentiometerPin);
 //  Serial.println(tmp, DEC); // you must call Serial.begin(9600) once before using this
-//  return tmp > THRESHHOLD;
+//  return tmp > POT_THRESHHOLD;
 //}
-
