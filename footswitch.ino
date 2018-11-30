@@ -20,7 +20,7 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(buttonPin, INPUT_PULLUP);
   Keyboard.begin();
-//  Serial.begin(9600);
+//  Serial.begin(115200);
 }
 
 void loop() {
