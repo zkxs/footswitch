@@ -1,0 +1,6 @@
+{
+    "board": "arduino:avr:micro",
+    "port": "COM6",
+    "sketch": "footswitch.ino",
+    "output": "../footswitch_build"
+}
