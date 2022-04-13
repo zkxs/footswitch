@@ -1,89 +1,84 @@
 #include <Keyboard.h>
 
-#define KEY_1 KEY_F14
-#define KEY_2 0x5C // backslash
-#define POT_THRESHHOLD 512
 
-const int potentiometerPin = 0;
-const int buttonPin = 9;
+//#define DEBUG // define DEBUG to enable USB debugging
+#define LED_ENABLE // define LED_ENABLE to enable LEDs on switch press (the default behavior is annoying so this is better, trust me)
+#define KEY_BACKSLASH 0x5C
 
-// potientometer states
-bool currentPotentiometerValue; // could be local, but why not?
-bool lastPotentiometerValue = 0; // stored pot state
+struct Switch {
+  const uint8_t key;
+  const uint8_t pin;
+  const int potentiometerThreshold;
+  const bool polarity;
+  bool lastPotentiometerValue;
+};
 
-// button states
-uint8_t selectedKey = KEY_1;
-bool switchState; // could be local, but why not?
-bool lastSwitchState = false;
+const int SWITCH_COUNT = 2;
+Switch switches[SWITCH_COUNT] = {
+  Switch{KEY_F14, 0, 180, 0, 0},
+  Switch{KEY_BACKSLASH, 1, 512, 1, 0},
+};
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(buttonPin, INPUT_PULLUP);
   Keyboard.begin();
-//  Serial.begin(115200);
+  #ifdef DEBUG
+    Serial.begin(115200);
+  #endif
 }
 
 void loop() {
-  switchState = digitalRead(buttonPin) == LOW;
-
-  if (switchState != lastSwitchState) {
-    toggleKey();
-  }
-
-  lastSwitchState = switchState;
-  
   // put your main code here, to run repeatedly:
-  currentPotentiometerValue = readPot();
+  for (int switchIndex = 0; switchIndex < SWITCH_COUNT; switchIndex++) {
+    Switch *currentSwitch = &switches[switchIndex];
+    const bool currentPotentiometerValue = readPot(currentSwitch->pin, currentSwitch->potentiometerThreshold) != currentSwitch->polarity;
 
-  if (currentPotentiometerValue && !lastPotentiometerValue) { // rising edge
-    Keyboard.press(selectedKey);
-  } else if (!currentPotentiometerValue && lastPotentiometerValue) { // falling edge
-    Keyboard.release(selectedKey);
+    if (currentPotentiometerValue && !currentSwitch->lastPotentiometerValue) { // rising edge
+      Keyboard.press(currentSwitch->key);
+    } else if (!currentPotentiometerValue && currentSwitch->lastPotentiometerValue) { // falling edge
+      Keyboard.release(currentSwitch->key);
+    }
+
+    #ifdef LED_ENABLE
+      // we have finite LEDs so these are special cases
+      if (switchIndex == 0) {
+        writeLed0(currentPotentiometerValue);
+      } else if (switchIndex == 1) {
+        writeLed1(currentPotentiometerValue);
+      }
+    #endif
+
+    currentSwitch->lastPotentiometerValue = currentPotentiometerValue;
   }
 
-  writeLed(currentPotentiometerValue);
-  
-  lastPotentiometerValue = currentPotentiometerValue;
-  
   delay(1); // ms delay
 }
 
-void toggleKey() {
-  // release previous key if necessary
-  if (lastPotentiometerValue) {
-     Keyboard.release(selectedKey);
-  }
-  
-  if (selectedKey == KEY_1) {
-    selectedKey = KEY_2;
-  } else {
-    selectedKey = KEY_1;
-  }
-
-  // press new key if necessary
-  if (lastPotentiometerValue) {
-     Keyboard.press(selectedKey);
-  }
+bool readPot(const uint8_t pin, const int threshold) {
+  #ifdef DEBUG
+    int tmp = analogRead(pin);
+    Serial.print(pin, DEC);
+    Serial.print(": ");
+    Serial.println(tmp, DEC); // you must call Serial.begin(9600) once before using this
+    return tmp > threshold;
+  #else
+    // analogRead() returns [0, 1023]
+    return analogRead(pin) > threshold;
+  #endif
 }
 
-bool readPot(){
-  // analogRead() returns [0, 1023]
-  return analogRead(potentiometerPin) > POT_THRESHHOLD;
-}
-
-void writeLed(bool on) {
+void writeLed0(bool on) {
   if (on) {
+    TXLED0;
+  } else {
     TXLED1;
+  }
+}
+
+void writeLed1(bool on) {
+  if (on) {
     RXLED0;
   } else {
-    TXLED1;
     RXLED1;
   }
 }
-
-//int tmp;
-//bool debugReadPot(){
-//  tmp = analogRead(potentiometerPin);
-//  Serial.println(tmp, DEC); // you must call Serial.begin(9600) once before using this
-//  return tmp > POT_THRESHHOLD;
-//}
