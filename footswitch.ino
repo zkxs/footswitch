@@ -6,21 +6,27 @@
 #define KEY_BACKSLASH 0x5C
 
 struct Switch {
-  const uint8_t key;
+  const uint8_t key_layer_1;
+  const uint8_t key_layer_2;
   const uint8_t pin;
   const int potentiometerThreshold;
   const bool polarity;
   bool lastPotentiometerValue;
 };
 
-const int SWITCH_COUNT = 2;
+const int SWITCH_COUNT = 3;
 Switch switches[SWITCH_COUNT] = {
-  Switch{KEY_F14, 0, 180, 0, 0},
-  Switch{KEY_BACKSLASH, 1, 512, 1, 0},
+  Switch{KEY_F14, KEY_F15, 0, 180, false, false},
+  Switch{KEY_BACKSLASH, KEY_BACKSLASH, 1, 512, true, false},
+  Switch{KEY_F16, KEY_F16, 2, 512, true, false},
 };
+
+// mode switch pin
+const int MODE_SWITCH_PIN = 9;
 
 void setup() {
   // put your setup code here, to run once:
+  pinMode(MODE_SWITCH_PIN, INPUT_PULLUP); // default high, switch grounds the pin
   Keyboard.begin();
   #ifdef DEBUG
     Serial.begin(115200);
@@ -33,10 +39,12 @@ void loop() {
     Switch *currentSwitch = &switches[switchIndex];
     const bool currentPotentiometerValue = readPot(currentSwitch->pin, currentSwitch->potentiometerThreshold) != currentSwitch->polarity;
 
+    bool switchState = digitalRead(MODE_SWITCH_PIN) == LOW;
+    uint8_t key = switchState ? currentSwitch->key_layer_1 : currentSwitch->key_layer_2;
     if (currentPotentiometerValue && !currentSwitch->lastPotentiometerValue) { // rising edge
-      Keyboard.press(currentSwitch->key);
+      Keyboard.press(key);
     } else if (!currentPotentiometerValue && currentSwitch->lastPotentiometerValue) { // falling edge
-      Keyboard.release(currentSwitch->key);
+      Keyboard.release(key);
     }
 
     #ifdef LED_ENABLE
